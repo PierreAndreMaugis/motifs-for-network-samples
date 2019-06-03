@@ -73,7 +73,7 @@ runMC <- function(P0, P1, P2, ell, g0, gA, nmc)
   colnames(T0) <- c("nonpar","semipar","motif")#,"semipar.omni")
   
   TA <- NULL
-  TA[[1]] <- cbind(1:mc, g0, T0)
+  TA[[1]] <- cbind(1:nmc, g0, T0)
   colnames(TA[[1]]) <- c("mc","gamma","nonpar","semipar",'motif')
   for (i in 2:length(gA)) {
     gamma <- gA[i]
