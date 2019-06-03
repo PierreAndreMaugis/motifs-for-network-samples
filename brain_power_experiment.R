@@ -1,17 +1,22 @@
+# Largely based on http://www.cis.jhu.edu/~parky/MRN/omnicci.html
+require(foreach)
 con <- url("http://www.cis.jhu.edu/~parky/MRN/fibergraph.Rbin")
 load(con)
 close(con)
 con <- url("http://www.cis.jhu.edu/~parky/MRN/newcci.txt")
 cci <- scan(con)
 close(con)
+source("network_sample_tests.R")
+source("utilities.R")
+source("subgraph_counting.R")
 
 glist <- list()
 for (i in 1:length(fibergraph.list)) {
-	gi <- fibergraph.list[[i]]; ## upper-triangle only
-	n  <- gi@Dim[1];
-	gi <- (gi + t(gi)); ## symmetrization, automatic hollow
-	gi <- ifelse(gi>0,1,0); gi <- matrix(gi,nrow=n); ## binarization
-	glist[[i]] <- graph_from_adjacency_matrix(gi, mode='undirected', diag=F);
+  gi <- fibergraph.list[[i]]; ## upper-triangle only
+  n  <- gi@Dim[1];
+  gi <- (gi + t(gi)); ## symmetrization, automatic hollow
+  gi <- ifelse(gi>0,1,0); gi <- matrix(gi,nrow=n); ## binarization
+  glist[[i]] <- graph_from_adjacency_matrix(gi, mode='undirected', diag=F);
 }
 
 empty <- which(sapply(glist, ecount)==0 | sapply(glist, vcount)!=70)
@@ -103,37 +108,16 @@ calcPwr <- function(T0, TA, alpha=0.05)
            pwr.nonpar=pwr.nonpar, pwr.semipar=pwr.semipar, pwr.motif=pwr.motif))
 }   
 
-nmc <- 50
-ell <- 23
+nmc <- 2
+ell <- 2
 g0 <- 0
-gA <- seq(0, .3, by=.1)
+gA <- seq(0, .3, by=.3)
 start.time <- Sys.time()
 set.seed(start.time)
 Tlist <- runMC(Phat, Phat1, Phat2, ell, g0, gA, nmc)
-save(Tlist, file="Tlist_focused_03.Rbin")
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-time.taken
 
-#gA <- seq(0, .3, by=.1)
-#gA <- seq(0, 1, by=.25)
-load("Tlist_focused_01.Rbin") 
-Tlist_01 <- Tlist
-load("Tlist_focused_02.Rbin")
-Tlist_02 <- Tlist
-load("Tlist_focused_03.Rbin")
-Tlist_03 <- Tlist
-Tlist <- list()
-Tlist$T0 <- rbind(Tlist_01$T0, Tlist_02$T0, Tlist_03$T0)
-for (i in 1:length(Tlist_02$TA)){
-  Tlist$TA[[i]] <- rbind(Tlist_01$TA[[i]],
-                         Tlist_02$TA[[i]],
-                         Tlist_03$TA[[i]])
-  Tlist$TA[[i]][, 1] <- 1:length(Tlist$TA[[i]][, 1])}
-df
 df.pwr <- as.data.frame(sapply(Tlist$TA, function(x) calcPwr(Tlist$T0, x)))
-names(df.pwr) <- paste0("gamma = ", gA); df.pwr
-
+names(df.pwr) <- paste0("gamma = ", gA)
 
 TA <- lapply(1:length(Tlist$TA), function(x) 
   cbind(Tlist$TA[[x]], 
