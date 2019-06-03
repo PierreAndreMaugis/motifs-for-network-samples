@@ -108,14 +108,15 @@ calcPwr <- function(T0, TA, alpha=0.05)
            pwr.nonpar=pwr.nonpar, pwr.semipar=pwr.semipar, pwr.motif=pwr.motif))
 }   
 
-nmc <- 2
-ell <- 2
+                
+# Running the experiemnt (change the three parameters bellow to change how large you want the experiment to be) 
+nmc <- 53
+ell <- 23
 g0 <- 0
-gA <- seq(0, .3, by=.3)
-start.time <- Sys.time()
-set.seed(start.time)
+gA <- seq(0, .5, by=.1ß)
 Tlist <- runMC(Phat, Phat1, Phat2, ell, g0, gA, nmc)
 
+# Plotting output
 df.pwr <- as.data.frame(sapply(Tlist$TA, function(x) calcPwr(Tlist$T0, x)))
 names(df.pwr) <- paste0("gamma = ", gA)
 
