@@ -928,3 +928,75 @@ TSMPL_CR <- function(G1, G2) {
     statistic = statistic
   ))
 }
+
+TSMPL_CR_novar <- function(G1, G2) {
+  #######
+  # Input:
+  #######
+  # - G1,G2: a list of adjacency matrices of simple graphs
+  ########
+  # Output:
+  ########
+  # - hat_mu : The difference in estimated subgraph densities
+  # - hat_sgm: The estimated covariance matrix
+  # - p.value: The p-value for the test where the convariance is estimated from the sampled counts rather than using
+  # closed for formula. This is an applicable oslutions when the graphs are large xor there are many replicates.
+  
+  #######
+  # Counting rooted C_2,C_3,C_4 in G to estimate means
+  ###################################################
+  mu_F1 <- matrix(NA, length(G1), 3)
+  mu_F2 <- matrix(NA, length(G2), 3)
+  for (i in 1:length(G1)) {
+    print(paste("Counting subgraph number", i, "in first sample"))
+    flush.console()
+    A <- G1[[i]]
+    A2 <- A %*% A
+    A3 <- A %*% A2
+    A4 <- A %*% A3
+    n <- nrow(A)
+    edgs <- diag(A2)
+    tris <- diag(A3) / 2
+    sqrs <- (diag(A4) - rowSums(A2) - diag(A2) * pmax(0, (diag(A2) - 1))) / 2
+    #
+    mu_F1[i, 1] <- sum(edgs / 2) / (ffct(n, 2) / 2) # Edge count
+    mu_F1[i, 2] <- sum(tris / 3) / (ffct(n, 3) / 6) # Triangle count
+    mu_F1[i, 3] <- sum(sqrs / 4) / (ffct(n, 4) / 8) # Squares count
+  }
+  for (i in 1:length(G2)) {
+    print(paste("Counting subgraph number", i, "in second sample"))
+    flush.console()
+    A <- G2[[i]]
+    A2 <- A %*% A
+    A3 <- A %*% A2
+    A4 <- A %*% A3
+    n <- nrow(A)
+    edgs <- diag(A2)
+    tris <- diag(A3) / 2
+    sqrs <- (diag(A4) - rowSums(A2) - diag(A2) * pmax(0, (diag(A2) - 1))) / 2
+    #
+    mu_F2[i, 1] <- sum(edgs / 2) / (ffct(n, 2) / 2) # Edge count
+    mu_F2[i, 2] <- sum(tris / 3) / (ffct(n, 3) / 6) # Triangle count
+    mu_F2[i, 3] <- sum(sqrs / 4) / (ffct(n, 4) / 8) # Squares count
+  }
+
+  # Computing the p-value
+  ######################
+  g1 <- length(G1)
+  g2 <- length(G2)
+  hat_mu <- sqrt((g1 * g2) / (g1 + g2)) * (colMeans(mu_F1) - colMeans(mu_F2))
+  hat_sgm <- cov(rbind(mu_F1, mu_F2))
+  statistic <- hat_mu %*% solve(hat_sgm) %*% hat_mu
+  p.value <- 1 - pchisq(statistic, 3)
+  
+  # Output
+  #######
+  return(list(
+    hat_mu = hat_mu,
+    hat_sgm = hat_sgm,
+    p.value = p.value,
+    mu_F1 = mu_F1,
+    mu_F2 = mu_F2,
+    statistic = statistic
+  ))
+}
